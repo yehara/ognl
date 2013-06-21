@@ -1828,28 +1828,7 @@ public class OgnlRuntime {
         return true;
     }
     
-    /**
-     * cache get methods
-     */
-    public static Method getGetMethod(OgnlContext context, Class targetClass, String propertyName) throws IntrospectionException, OgnlException {
-        Integer cacheKey = new Integer(targetClass.hashCode() * 31 + propertyName.hashCode());
-        if (cacheGetMethod.containsKey(cacheKey)) {
-            return (Method) cacheGetMethod.get(cacheKey);
-        } else {
-            Method result = null;
-            synchronized (cacheGetMethod) {
-                if (!cacheGetMethod.containsKey(cacheKey)) {
-                    result = _getGetMethod(context, targetClass, propertyName);
-                    cacheGetMethod.put(cacheKey, result);
-                } else {
-                    result = (Method) cacheGetMethod.get(cacheKey);
-                }
-            }
-            return result;
-        }
-    }
-
-    private static Method _getGetMethod(OgnlContext context, Class targetClass, String propertyName)
+    public static Method getGetMethod(OgnlContext context, Class targetClass, String propertyName)
             throws IntrospectionException, OgnlException
     {
         Method result = null;
@@ -1886,28 +1865,7 @@ public class OgnlRuntime {
         return isMethodAccessible(context, target, getGetMethod(context, targetClass, propertyName), propertyName);
     }
     
-    /**
-     * cache set methods method 
-     */
-    public static Method getSetMethod(OgnlContext context, Class targetClass, String propertyName) throws IntrospectionException, OgnlException {
-        Integer cacheKey = new Integer(targetClass.hashCode() * 27 + propertyName.hashCode());
-        if (cacheSetMethod.containsKey(cacheKey)) {
-            return (Method) cacheSetMethod.get(cacheKey);
-        } else {
-            Method result = null;
-            synchronized (cacheSetMethod) { //PATCHED
-                if (!cacheSetMethod.containsKey(cacheKey)) {
-                    result = _getSetMethod(context, targetClass, propertyName);
-                    cacheSetMethod.put(cacheKey, result);
-                } else {
-                    result = (Method) cacheSetMethod.get(cacheKey);
-                }
-            }
-            return result;
-        }
-    }
-
-    private static Method _getSetMethod(OgnlContext context, Class targetClass, String propertyName)
+    public static Method getSetMethod(OgnlContext context, Class targetClass, String propertyName)
             throws IntrospectionException, OgnlException
     {
         Method result = null;
