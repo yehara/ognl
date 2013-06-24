@@ -1845,24 +1845,24 @@ public class OgnlRuntime {
         log.info("getGetMethod. key:{} propety:{}", cacheKey, exactKey);
         if (cacheGetMethod.containsKey(cacheKey)) {
             String cachedExactKey = cacheGetMethodKey.get(cacheKey);
-            if(exactKey.equals(cachedExactKey)) {
-                return (Method) cacheGetMethod.get(cacheKey);
+            if(!exactKey.equals(cachedExactKey)) {
+                log.error("collision detect. expected: {} actual: {}", exactKey, cachedExactKey);
             }
-            log.error("collision detect. expected: {} actual: {}", exactKey, cachedExactKey);
+            return (Method) cacheGetMethod.get(cacheKey);
         }
+        log.info("cache miss");
         Method result = null;
-        synchronized (cacheGetMethod) { //PATCHED
+        synchronized (cacheGetMethod) {
             if (!cacheGetMethod.containsKey(cacheKey)) {
                 result = _getGetMethod(context, targetClass, propertyName);
                 cacheGetMethod.put(cacheKey, result);
                 cacheGetMethodKey.put(cacheKey, exactKey);
             } else {
                 String cachedExactKey = cacheGetMethodKey.get(cacheKey);
-                if(exactKey.equals(cachedExactKey)) {
-                    return (Method) cacheGetMethod.get(cacheKey);
+                if(!exactKey.equals(cachedExactKey)) {
+                    log.error("collision detect. expected: {} actual: {}", exactKey, cachedExactKey);
                 }
-                log.error("collision detect. expected: {} actual: {}", exactKey, cachedExactKey);
-                return _getGetMethod(context, targetClass, propertyName);
+                return (Method) cacheGetMethod.get(cacheKey);
             }
         }
         return result;
@@ -1914,11 +1914,12 @@ public class OgnlRuntime {
         log.info("getSetMethod. key:{} propety:{}", cacheKey, exactKey);
         if (cacheSetMethod.containsKey(cacheKey)) {
             String cachedExactKey = cacheSetMethodKey.get(cacheKey);
-            if(exactKey.equals(cachedExactKey)) {
-                return (Method) cacheSetMethod.get(cacheKey);
+            if(!exactKey.equals(cachedExactKey)) {
+                log.error("collision detect. expected: {} actual: {}", exactKey, cachedExactKey);
             }
-            log.error("collision detect. expected: {} actual: {}", exactKey, cachedExactKey);
+            return (Method) cacheSetMethod.get(cacheKey);
         }
+        log.info("cache miss");
         Method result = null;
         synchronized (cacheSetMethod) { //PATCHED
             if (!cacheSetMethod.containsKey(cacheKey)) {
@@ -1927,11 +1928,10 @@ public class OgnlRuntime {
                 cacheSetMethodKey.put(cacheKey, exactKey);
             } else {
                 String cachedExactKey = cacheSetMethodKey.get(cacheKey);
-                if(exactKey.equals(cachedExactKey)) {
-                    return (Method) cacheSetMethod.get(cacheKey);
+                if(!exactKey.equals(cachedExactKey)) {
+                    log.error("collision detect. expected: {} actual: {}", exactKey, cachedExactKey);
                 }
-                log.error("collision detect. expected: {} actual: {}", exactKey, cachedExactKey);
-                return _getSetMethod(context, targetClass, propertyName);
+                return (Method) cacheSetMethod.get(cacheKey);
             }
         }
         return result;
