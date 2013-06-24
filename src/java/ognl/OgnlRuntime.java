@@ -42,6 +42,9 @@ import java.math.BigInteger;
 import java.security.Permission;
 import java.util.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Utility class used by internal OGNL API to do various things like:
  *
@@ -57,6 +60,9 @@ import java.util.*;
  */
 public class OgnlRuntime {
 
+    /** Logger */
+    private static final Logger log = LoggerFactory.getLogger(OgnlRuntime.class);
+    
     /**
      * Constant expression used to indicate that a given method / property couldn't be found
      * during reflection operations.
@@ -149,6 +155,8 @@ public class OgnlRuntime {
     
     static final Map cacheSetMethod = new HashMap();
     static final Map cacheGetMethod = new HashMap();
+    static final Map<Integer, String> cacheSetMethodKey = new HashMap<Integer, String>();
+    static final Map<Integer, String> cacheGetMethodKey = new HashMap<Integer, String>();
 
     static ClassCacheInspector _cacheInspector;
 
@@ -1833,20 +1841,31 @@ public class OgnlRuntime {
      */
     public static Method getGetMethod(OgnlContext context, Class targetClass, String propertyName) throws IntrospectionException, OgnlException {
         Integer cacheKey = new Integer(targetClass.hashCode() * 31 + propertyName.hashCode());
+        String exactKey = targetClass.getCanonicalName() + "." + propertyName;
+        log.info("getGetMethod. key:{} propety:{}", cacheKey, exactKey);
         if (cacheGetMethod.containsKey(cacheKey)) {
-            return (Method) cacheGetMethod.get(cacheKey);
-        } else {
-            Method result = null;
-            synchronized (cacheGetMethod) {
-                if (!cacheGetMethod.containsKey(cacheKey)) {
-                    result = _getGetMethod(context, targetClass, propertyName);
-                    cacheGetMethod.put(cacheKey, result);
-                } else {
-                    result = (Method) cacheGetMethod.get(cacheKey);
-                }
+            String cachedExactKey = cacheGetMethodKey.get(cacheKey);
+            if(exactKey.equals(cachedExactKey)) {
+                return (Method) cacheGetMethod.get(cacheKey);
             }
-            return result;
+            log.error("collision detect. expected: {} actual: {}", exactKey, cachedExactKey);
         }
+        Method result = null;
+        synchronized (cacheGetMethod) { //PATCHED
+            if (!cacheGetMethod.containsKey(cacheKey)) {
+                result = _getGetMethod(context, targetClass, propertyName);
+                cacheGetMethod.put(cacheKey, result);
+                cacheGetMethodKey.put(cacheKey, exactKey);
+            } else {
+                String cachedExactKey = cacheGetMethodKey.get(cacheKey);
+                if(exactKey.equals(cachedExactKey)) {
+                    return (Method) cacheGetMethod.get(cacheKey);
+                }
+                log.error("collision detect. expected: {} actual: {}", exactKey, cachedExactKey);
+                return _getGetMethod(context, targetClass, propertyName);
+            }
+        }
+        return result;
     }
 
     private static Method _getGetMethod(OgnlContext context, Class targetClass, String propertyName)
@@ -1891,20 +1910,31 @@ public class OgnlRuntime {
      */
     public static Method getSetMethod(OgnlContext context, Class targetClass, String propertyName) throws IntrospectionException, OgnlException {
         Integer cacheKey = new Integer(targetClass.hashCode() * 27 + propertyName.hashCode());
+        String exactKey = targetClass.getCanonicalName() + "." + propertyName;
+        log.info("getSetMethod. key:{} propety:{}", cacheKey, exactKey);
         if (cacheSetMethod.containsKey(cacheKey)) {
-            return (Method) cacheSetMethod.get(cacheKey);
-        } else {
-            Method result = null;
-            synchronized (cacheSetMethod) { //PATCHED
-                if (!cacheSetMethod.containsKey(cacheKey)) {
-                    result = _getSetMethod(context, targetClass, propertyName);
-                    cacheSetMethod.put(cacheKey, result);
-                } else {
-                    result = (Method) cacheSetMethod.get(cacheKey);
-                }
+            String cachedExactKey = cacheSetMethodKey.get(cacheKey);
+            if(exactKey.equals(cachedExactKey)) {
+                return (Method) cacheSetMethod.get(cacheKey);
             }
-            return result;
+            log.error("collision detect. expected: {} actual: {}", exactKey, cachedExactKey);
         }
+        Method result = null;
+        synchronized (cacheSetMethod) { //PATCHED
+            if (!cacheSetMethod.containsKey(cacheKey)) {
+                result = _getSetMethod(context, targetClass, propertyName);
+                cacheSetMethod.put(cacheKey, result);
+                cacheSetMethodKey.put(cacheKey, exactKey);
+            } else {
+                String cachedExactKey = cacheSetMethodKey.get(cacheKey);
+                if(exactKey.equals(cachedExactKey)) {
+                    return (Method) cacheSetMethod.get(cacheKey);
+                }
+                log.error("collision detect. expected: {} actual: {}", exactKey, cachedExactKey);
+                return _getSetMethod(context, targetClass, propertyName);
+            }
+        }
+        return result;
     }
 
     private static Method _getSetMethod(OgnlContext context, Class targetClass, String propertyName)
