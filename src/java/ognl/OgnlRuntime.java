@@ -757,11 +757,9 @@ public class OgnlRuntime {
     public static Class[] getParameterTypes(Constructor c)
     {
         Class[] result;
-        if ((result = (Class[]) _ctorParameterTypesCache.get(c)) == null) {
-            synchronized (_ctorParameterTypesCache) {
-                if ((result = (Class[]) _ctorParameterTypesCache.get(c)) == null) {
-                    _ctorParameterTypesCache.put(c, result = c.getParameterTypes());
-                }
+        synchronized (_ctorParameterTypesCache) {
+            if ((result = (Class[]) _ctorParameterTypesCache.get(c)) == null) {
+                _ctorParameterTypesCache.put(c, result = c.getParameterTypes());
             }
         }
         return result;
@@ -1506,11 +1504,10 @@ public class OgnlRuntime {
     public static List getConstructors(Class targetClass)
     {
         List result;
-        if ((result = (List) _constructorCache.get(targetClass)) == null) {
-            synchronized (_constructorCache) {
-                if ((result = (List) _constructorCache.get(targetClass)) == null) {
-                    _constructorCache.put(targetClass, result = Arrays.asList(targetClass.getConstructors()));
-                }
+        synchronized (_constructorCache) {
+            if ((result = (List) _constructorCache.get(targetClass)) == null) {
+                _constructorCache.put(targetClass,
+                                      result = Arrays.asList(targetClass.getConstructors()));
             }
         }
         return result;
@@ -1521,37 +1518,31 @@ public class OgnlRuntime {
         ClassCache cache = (staticMethods ? _staticMethodCache : _instanceMethodCache);
         Map result;
 
-        if ((result = (Map) cache.get(targetClass)) == null) {
-            synchronized (cache)
-            {
-                if ((result = (Map) cache.get(targetClass)) == null)
-                {
-                    result = new HashMap(23);
+        synchronized (cache) {
+            if ((result = (Map) cache.get(targetClass)) == null) {
+                result = new HashMap(23);
 
-                    for (Class c = targetClass; c != null; c = c.getSuperclass())
-                    {
-                        Method[] ma = c.getDeclaredMethods();
+                for (Class c = targetClass; c != null; c = c.getSuperclass()) {
+                    Method[] ma = c.getDeclaredMethods();
 
-                        for (int i = 0, icount = ma.length; i < icount; i++)
-                        {
-                            // skip over synthetic methods
+                    for (int i = 0, icount = ma.length; i < icount; i++) {
+                        // skip over synthetic methods
 
-                            if (!isMethodCallable(ma[i]))
-                                continue;
+                        if (!isMethodCallable(ma[i]))
+                            continue;
 
-                            if (Modifier.isStatic(ma[i].getModifiers()) == staticMethods)
-                            {
-                                List ml = (List) result.get(ma[i].getName());
+                        if (Modifier.isStatic(ma[i].getModifiers()) == staticMethods) {
+                            List ml = (List) result.get(ma[i].getName());
 
-                                if (ml == null)
-                                    result.put(ma[i].getName(), ml = new ArrayList());
+                            if (ml == null)
+                                result.put(ma[i].getName(),
+                                           ml = new ArrayList());
 
-                                ml.add(ma[i]);
-                            }
+                            ml.add(ma[i]);
                         }
                     }
-                    cache.put(targetClass, result);
                 }
+                cache.put(targetClass, result);
             }
         }
         return result;
@@ -1566,18 +1557,16 @@ public class OgnlRuntime {
     {
         Map result;
 
-        if ((result = (Map) _fieldCache.get(targetClass)) == null) {
-            synchronized (_fieldCache) {
-                if ((result = (Map) _fieldCache.get(targetClass)) == null) {
-                    Field fa[];
+        synchronized (_fieldCache) {
+            if ((result = (Map) _fieldCache.get(targetClass)) == null) {
+                Field fa[];
 
-                    result = new HashMap(23);
-                    fa = targetClass.getDeclaredFields();
-                    for (int i = 0; i < fa.length; i++) {
-                        result.put(fa[i].getName(), fa[i]);
-                    }
-                    _fieldCache.put(targetClass, result);
+                result = new HashMap(23);
+                fa = targetClass.getDeclaredFields();
+                for (int i = 0; i < fa.length; i++) {
+                    result.put(fa[i].getName(), fa[i]);
                 }
+                _fieldCache.put(targetClass, result);
             }
         }
         return result;
@@ -1761,50 +1750,51 @@ public class OgnlRuntime {
         List result = null;
         ClassCache cache = _declaredMethods[findSets ? 0 : 1];
 
-        Map propertyCache = (Map) cache.get(targetClass);
-        if ((propertyCache == null) || ((result = (List) propertyCache.get(propertyName)) == null)) {
-            synchronized (cache) {
-                propertyCache = (Map) cache.get(targetClass);
+        synchronized (cache) {
+            Map propertyCache = (Map) cache.get(targetClass);
 
-                if ((propertyCache == null) || ((result = (List) propertyCache.get(propertyName)) == null)) {
+            if ((propertyCache == null)
+                    || ((result = (List) propertyCache.get(propertyName)) == null)) {
 
-                    String baseName = Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
+                String baseName = Character.toUpperCase(propertyName.charAt(0))
+                        + propertyName.substring(1);
 
-                    for (Class c = targetClass; c != null; c = c.getSuperclass()) {
-                        Method[] methods = c.getDeclaredMethods();
+                for (Class c = targetClass; c != null; c = c.getSuperclass()) {
+                    Method[] methods = c.getDeclaredMethods();
 
-                        for (int i = 0; i < methods.length; i++) {
+                    for (int i = 0; i < methods.length; i++) {
 
-                            if (!isMethodCallable(methods[i]))
-                                continue;
+                        if (!isMethodCallable(methods[i]))
+                            continue;
 
-                            String ms = methods[i].getName();
+                        String ms = methods[i].getName();
 
-                            if (ms.endsWith(baseName)) {
-                                boolean isSet = false, isIs = false;
+                        if (ms.endsWith(baseName)) {
+                            boolean isSet = false, isIs = false;
 
-                                if ((isSet = ms.startsWith(SET_PREFIX)) || ms.startsWith(GET_PREFIX)
+                            if ((isSet = ms.startsWith(SET_PREFIX))
+                                    || ms.startsWith(GET_PREFIX)
                                     || (isIs = ms.startsWith(IS_PREFIX))) {
-                                    int prefixLength = (isIs ? 2 : 3);
+                                int prefixLength = (isIs ? 2 : 3);
 
-                                    if (isSet == findSets) {
-                                        if (baseName.length() == (ms.length() - prefixLength)) {
-                                            if (result == null) {
-                                                result = new ArrayList();
-                                            }
-                                            result.add(methods[i]);
+                                if (isSet == findSets) {
+                                    if (baseName.length() == (ms.length() - prefixLength)) {
+                                        if (result == null) {
+                                            result = new ArrayList();
                                         }
+                                        result.add(methods[i]);
                                     }
                                 }
                             }
                         }
                     }
-                    if (propertyCache == null) {
-                        cache.put(targetClass, propertyCache = new HashMap(101));
-                    }
-
-                    propertyCache.put(propertyName, (result == null) ? NotFoundList : result);
                 }
+                if (propertyCache == null) {
+                    cache.put(targetClass, propertyCache = new HashMap(101));
+                }
+
+                propertyCache.put(propertyName, (result == null) ? NotFoundList
+                                                                : result);
             }
         }
         return (result == NotFoundList) ? null : result;
@@ -2035,34 +2025,36 @@ public class OgnlRuntime {
     {
         Map result;
 
-        if ((result = (Map) _propertyDescriptorCache.get(targetClass)) == null)
-        {
-            synchronized (_propertyDescriptorCache) {
-                if ((result = (Map) _propertyDescriptorCache.get(targetClass)) == null)
-                {
-                    PropertyDescriptor[] pda = Introspector.getBeanInfo(targetClass).getPropertyDescriptors();
+        synchronized (_propertyDescriptorCache) {
+            if ((result = (Map) _propertyDescriptorCache.get(targetClass)) == null) {
+                PropertyDescriptor[] pda = Introspector.getBeanInfo(targetClass)
+                        .getPropertyDescriptors();
 
-                    result = new HashMap(101);
-                    for (int i = 0, icount = pda.length; i < icount; i++)
-                    {
-                        // workaround for Introspector bug 6528714 (bugs.sun.com)
-                        if (pda[i].getReadMethod() != null && !isMethodCallable(pda[i].getReadMethod()))
-                        {
-                            pda[i].setReadMethod(findClosestMatchingMethod(targetClass, pda[i].getReadMethod(), pda[i].getName(),
-                                                                           pda[i].getPropertyType(), true));
-                        }
-                        if (pda[i].getWriteMethod() != null && !isMethodCallable(pda[i].getWriteMethod()))
-                        {
-                            pda[i].setWriteMethod(findClosestMatchingMethod(targetClass, pda[i].getWriteMethod(), pda[i].getName(),
-                                                                            pda[i].getPropertyType(), false));
-                        }
-
-                        result.put(pda[i].getName(), pda[i]);
+                result = new HashMap(101);
+                for (int i = 0, icount = pda.length; i < icount; i++) {
+                    // workaround for Introspector bug 6528714 (bugs.sun.com)
+                    if (pda[i].getReadMethod() != null
+                            && !isMethodCallable(pda[i].getReadMethod())) {
+                        pda[i].setReadMethod(findClosestMatchingMethod(targetClass,
+                                                                       pda[i].getReadMethod(),
+                                                                       pda[i].getName(),
+                                                                       pda[i].getPropertyType(),
+                                                                       true));
+                    }
+                    if (pda[i].getWriteMethod() != null
+                            && !isMethodCallable(pda[i].getWriteMethod())) {
+                        pda[i].setWriteMethod(findClosestMatchingMethod(targetClass,
+                                                                        pda[i].getWriteMethod(),
+                                                                        pda[i].getName(),
+                                                                        pda[i].getPropertyType(),
+                                                                        false));
                     }
 
-                    findObjectIndexedPropertyDescriptors(targetClass, result);
-                    _propertyDescriptorCache.put(targetClass, result);
+                    result.put(pda[i].getName(), pda[i]);
                 }
+
+                findObjectIndexedPropertyDescriptors(targetClass, result);
+                _propertyDescriptorCache.put(targetClass, result);
             }
         }
         return result;
@@ -2107,12 +2099,11 @@ public class OgnlRuntime {
         PropertyDescriptor[] result = null;
 
         if (targetClass != null) {
-            if ((result = (PropertyDescriptor[]) _propertyDescriptorCache.get(targetClass)) == null) {
-                synchronized (_propertyDescriptorCache) {
-                    if ((result = (PropertyDescriptor[]) _propertyDescriptorCache.get(targetClass)) == null) {
-                        _propertyDescriptorCache.put(targetClass, result = Introspector.getBeanInfo(targetClass)
-                                .getPropertyDescriptors());
-                    }
+            synchronized (_propertyDescriptorCache) {
+                if ((result = (PropertyDescriptor[]) _propertyDescriptorCache.get(targetClass)) == null) {
+                    _propertyDescriptorCache.put(targetClass,
+                                                 result = Introspector.getBeanInfo(targetClass)
+                                                         .getPropertyDescriptors());
                 }
             }
         }
@@ -2210,44 +2201,41 @@ public class OgnlRuntime {
     {
         Object answer = null;
 
-        if ((answer = handlers.get(forClass)) == null) {
-            synchronized (handlers) {
-                if ((answer = handlers.get(forClass)) == null) {
-                    Class keyFound;
+        synchronized (handlers) {
+            if ((answer = handlers.get(forClass)) == null) {
+                Class keyFound;
 
-                    if (forClass.isArray()) {
-                        answer = handlers.get(Object[].class);
-                        keyFound = null;
-                    } else {
-                        keyFound = forClass;
-                        outer:
-                        for (Class c = forClass; c != null; c = c.getSuperclass()) {
-                            answer = handlers.get(c);
-                            if (answer == null) {
-                                Class[] interfaces = c.getInterfaces();
-                                for (int index = 0, count = interfaces.length; index < count; ++index) {
-                                    Class iface = interfaces[index];
+                if (forClass.isArray()) {
+                    answer = handlers.get(Object[].class);
+                    keyFound = null;
+                } else {
+                    keyFound = forClass;
+                    outer : for (Class c = forClass; c != null; c = c.getSuperclass()) {
+                        answer = handlers.get(c);
+                        if (answer == null) {
+                            Class[] interfaces = c.getInterfaces();
+                            for (int index = 0, count = interfaces.length; index < count; ++index) {
+                                Class iface = interfaces[index];
 
-                                    answer = handlers.get(iface);
-                                    if (answer == null) {
-                                        /* Try super-interfaces */
-                                        answer = getHandler(iface, handlers);
-                                    }
-                                    if (answer != null) {
-                                        keyFound = iface;
-                                        break outer;
-                                    }
+                                answer = handlers.get(iface);
+                                if (answer == null) {
+                                    /* Try super-interfaces */
+                                    answer = getHandler(iface, handlers);
                                 }
-                            } else {
-                                keyFound = c;
-                                break;
+                                if (answer != null) {
+                                    keyFound = iface;
+                                    break outer;
+                                }
                             }
+                        } else {
+                            keyFound = c;
+                            break;
                         }
                     }
-                    if (answer != null) {
-                        if (keyFound != forClass) {
-                            handlers.put(forClass, answer);
-                        }
+                }
+                if (answer != null) {
+                    if (keyFound != forClass) {
+                        handlers.put(forClass, answer);
                     }
                 }
             }
