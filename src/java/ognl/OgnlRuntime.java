@@ -146,9 +146,6 @@ public class OgnlRuntime {
 
     static final IntHashMap _methodAccessCache = new IntHashMap();
     static final IntHashMap _methodPermCache = new IntHashMap();
-    
-    static final Map cacheSetMethod = new HashMap();
-    static final Map cacheGetMethod = new HashMap();
 
     static ClassCacheInspector _cacheInspector;
 
