@@ -139,7 +139,7 @@ public class OgnlRuntime {
     static final Map _primitiveTypes = new HashMap(101);
     static final ClassCache _primitiveDefaults = new ClassCacheImpl();
     static final Map _methodParameterTypesCache = new HashMap(101);
-    static final Map _genericMethodParameterTypesCache = new HashMap(101);
+    static final Map<Method, Class[]> _genericMethodParameterTypesCache = new ConcurrentHashMap<Method, Class[]>(101);
     static final Map _ctorParameterTypesCache = new HashMap(101);
     static SecurityManager _securityManager = System.getSecurityManager();
     static final EvaluationPool _evaluationPool = new EvaluationPool();
@@ -640,7 +640,7 @@ public class OgnlRuntime {
             return getParameterTypes(m);
         }
 
-        if ((types = (Class[]) _genericMethodParameterTypesCache.get(m)) != null)
+        if ((types = _genericMethodParameterTypesCache.get(m)) != null)
         {
             ParameterizedType genericSuperclass = (ParameterizedType) typeGenericSuperclass;
             if (Arrays.equals(types, genericSuperclass.getActualTypeArguments())) {
@@ -690,10 +690,7 @@ public class OgnlRuntime {
             types[i] = m.getParameterTypes()[i];
         }
 
-        synchronized (_genericMethodParameterTypesCache)
-        {
-            _genericMethodParameterTypesCache.put(m, types);
-        }
+        _genericMethodParameterTypesCache.put(m, types);
 
         return types;
     }
