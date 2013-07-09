@@ -1574,47 +1574,37 @@ public class OgnlRuntime {
     {
         Field result = null;
 
-        Object o = getFields(inClass).get(name);
-        if(o == null) {
-            synchronized (_fieldCache) {
-                o = getFields(inClass).get(name);
+        synchronized (_fieldCache) {
+            Object o = getFields(inClass).get(name);
 
-                if (o == null) {
-                    _superclasses.clear();
-                    for (Class sc = inClass; (sc != null); sc = sc.getSuperclass()) {
-                        if ((o = getFields(sc).get(name)) == NotFound)
-                            break;
+            if (o == null) {
+                _superclasses.clear();
+                for (Class sc = inClass; (sc != null); sc = sc.getSuperclass()) {
+                    if ((o = getFields(sc).get(name)) == NotFound)
+                        break;
 
-                        _superclasses.add(sc);
+                    _superclasses.add(sc);
 
-                        if ((result = (Field) o) != null)
-                            break;
-                    }
-                    /*
-                     * Bubble the found value (either cache miss or actual field) to all supeclasses
-                     * that we saw for quicker access next time.
-                     */
-                    for (int i = 0, icount = _superclasses.size(); i < icount; i++) {
-                        getFields((Class) _superclasses.get(i)).put(name, (result == null) ? NotFound : result);
-                    }
+                    if ((result = (Field) o) != null)
+                        break;
+                }
+                /*
+                 * Bubble the found value (either cache miss or actual field) to all supeclasses
+                 * that we saw for quicker access next time.
+                 */
+                for (int i = 0, icount = _superclasses.size(); i < icount; i++) {
+                    getFields((Class) _superclasses.get(i)).put(name, (result == null) ? NotFound : result);
+                }
+            } else {
+                if (o instanceof Field) {
+                    result = (Field) o;
                 } else {
-                    if (o instanceof Field) {
-                        result = (Field) o;
-                    } else {
-                        if (result == NotFound)
-                            result = null;
-                    }
+                    if (result == NotFound)
+                        result = null;
                 }
             }
         }
-        else {
-            if (o instanceof Field) {
-                result = (Field) o;
-            } else {
-                if (result == NotFound)
-                    result = null;
-            }
-        }
+        
         return result;
     }
 
